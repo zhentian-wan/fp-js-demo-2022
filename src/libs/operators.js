@@ -67,6 +67,20 @@ export const filter = (predicate) =>
     });
   });
 
+export const doneAfter = (condition) => (broadcaster) => (listener) => {
+  const cancel = broadcaster((value) => {
+    listener(value);
+    if (condition(value)) {
+      listener(DONE);
+      cancel();
+    }
+  });
+
+  return () => {
+    cancel();
+  };
+};
+
 export const flatMap = (createBroadcaster) =>
   createOperator((broadcaster, listener) => {
     return broadcaster((value) => {
@@ -122,15 +136,14 @@ export const repeatWhen =
     let cancelWhen;
     const repeatListener = (value) => {
       if (value === DONE) {
-        if (cancelWhen) {
-          cancelWhen();
+        if (cancel) {
+          cancel();
         }
         // When whenBraodcaster fires, cancel the mainBroadcaster
         // then restart the repeatListener with mainBroadcaster
         cancelWhen = whenBroadcaster(() => {
-          if (cancel) {
-            cancel();
-          }
+          cancelWhen();
+          // cancel()
           cancel = mainBroadcaster(repeatListener);
           return;
         });
@@ -196,6 +209,72 @@ export const startWhen = curry(
     };
   }
 );
+
+export const sequences =
+  (...broadcasters) =>
+  (listener) => {
+    let cancel;
+    let broadcaster = broadcasters.shift();
+    const sequencesListener = (value) => {
+      if (value === DONE && broadcasters.length) {
+        let broadcaster = broadcasters.shift();
+        cancel = broadcaster(sequencesListener);
+        return;
+      }
+      listener(value);
+    };
+    cancel = broadcaster(sequencesListener);
+
+    return () => {
+      cancel();
+    };
+  };
+
+/**
+ * Idea is mapSequence(word => delayMessage(word))(forOf("Hello my name is Zhentian".split(" ")))
+ * it log out each word in defined time interval
+ * so createBroadcaster return a new broadcaster, take a innerListener as parameter
+ * the InnerListener will perform recursion when it get DONE value
+ *
+ * Buffer is a tick to handle when all values come in at the same time
+ * we can push the value to the buffer and wait for the next tick
+ */
+export const mapSequence =
+  (createBroadcaster) => (broadcaster) => (listener) => {
+    let buffer = [];
+    let innerBroadcaster;
+    let cancel;
+    let cacnelInner;
+    let innerListener = (innerValue) => {
+      if (innerValue === DONE) {
+        innerBroadcaster = null;
+        if (buffer.length) {
+          let value = buffer.shift();
+          if (value === DONE) {
+            listener(DONE);
+            return;
+          }
+          innerBroadcaster = createBroadcaster(value);
+          cacnelInner = innerBroadcaster(innerListener);
+        }
+        return;
+      }
+      listener(innerValue);
+    };
+    cancel = broadcaster((value) => {
+      if (innerBroadcaster) {
+        buffer.push(value);
+      } else {
+        innerBroadcaster = createBroadcaster(value);
+        cacnelInner = innerBroadcaster(innerListener);
+      }
+    });
+
+    return () => {
+      cancel();
+      cacnelInner && cacnelInner();
+    };
+  };
 
 export const takeUntil = curry(
   (outterBroadcaster, innterBroadcaster, listener) => {
