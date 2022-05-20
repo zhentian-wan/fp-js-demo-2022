@@ -177,6 +177,30 @@ export const repeatWhen =
     };
   };
 
+export const scan = (reducer, init) => (broadcaster) => (listener) => {
+  let acc = init;
+  let buffer = [];
+  const cancel = broadcaster((value) => {
+    if (cancel) {
+      cancel();
+    }
+    if (value === DONE) {
+      buffer.length = 0;
+      acc = init;
+      return;
+    } else {
+      buffer.push(value);
+    }
+    if (buffer.length) {
+      acc = reducer(acc, buffer.shift());
+      listener(acc);
+    }
+  });
+  return () => {
+    cancel();
+  };
+};
+
 // needs custom DONE logic, so pull out from createOperator
 export const split = (splitter) =>
   curry((broadcaster, listener) => {

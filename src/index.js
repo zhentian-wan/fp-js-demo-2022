@@ -6,12 +6,14 @@ import {
   filter,
   filterByKey,
   flatMap,
+  map,
   mapInputValue,
   mapSequence,
   mapTo,
+  scan,
 } from "./libs/operators";
 import { useBroadcaster, useListener } from "./libs/hooks";
-import { createTimeout, forOf } from "./libs/broadcasters";
+import { createTimeout, DONE, forOf } from "./libs/broadcasters";
 import { pipe } from "lodash/fp";
 
 const delayMessage = (msg) => mapTo(msg)(createTimeout(500));
@@ -27,7 +29,11 @@ const App = () => {
   const inputToSequenceMessage = pipe(
     mapInputValue,
     delayWhen(enter),
-    flatMap(sequenceMessages)
+    flatMap(sequenceMessages),
+    scan((acc, curr) => {
+      acc += ` ${curr}`;
+      return acc;
+    }, "")
   );
   const state = useBroadcaster(inputToSequenceMessage(onInput));
   return (
