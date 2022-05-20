@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
+import { DONE } from "./broadcasters";
 export const useBroadcaster = (broadcaster, deps = []) => {
   const [state, setState] = useState(null);
   useEffect(() => {
-    broadcaster(setState);
+    broadcaster((value) => {
+      if (value === DONE) {
+        return;
+      }
+      setState(value);
+    });
   }, deps);
   return state;
 };

@@ -58,6 +58,22 @@ export const doneCondition = (condition) => (broadcaster) => (listener) => {
   };
 };
 
+export const delayWhen = (allowBroadcaster) => (broadcaster) => (listener) => {
+  let currentValue;
+  let cancelAllow;
+  let cancel;
+  cancel = broadcaster((value) => {
+    currentValue = value;
+  });
+  cancelAllow = allowBroadcaster(() => {
+    listener(currentValue);
+  });
+  return () => {
+    cancel && cancel();
+    cancelAllow && cancelAllow();
+  };
+};
+
 export const filter = (predicate) =>
   createOperator((broadcaster, listener) => {
     return broadcaster((values) => {
@@ -66,6 +82,8 @@ export const filter = (predicate) =>
       }
     });
   });
+
+export const filterByKey = (key) => filter((e) => e.key === key);
 
 export const doneAfter = (condition) => (broadcaster) => (listener) => {
   const cancel = broadcaster((value) => {
