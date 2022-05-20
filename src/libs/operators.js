@@ -1,5 +1,5 @@
 import { curry } from "lodash";
-import { DONE } from "./broadcasters";
+import { createTimeout, DONE } from "./broadcasters";
 
 const createOperator = curry((operator, broadcaster, listener) => {
   return operator((behaviorListener) => {
@@ -84,6 +84,25 @@ export const filter = (predicate) =>
   });
 
 export const filterByKey = (key) => filter((e) => e.key === key);
+
+export const debounce = (time) => (broadcaster) => (listener) => {
+  let cancelTimeout;
+  const cancel = broadcaster((value) => {
+    if (cancelTimeout) {
+      cancelTimeout();
+    }
+    cancelTimeout = createTimeout(time)((innerValue) => {
+      if (innerValue === DONE) {
+        return;
+      }
+      listener(value);
+    });
+  });
+  return () => {
+    cancel();
+    cancelTimeout && cancelTimeout();
+  };
+};
 
 export const doneAfter = (condition) => (broadcaster) => (listener) => {
   const cancel = broadcaster((value) => {
@@ -339,4 +358,17 @@ export const mapDone = (doneValue) => (broadcaster) => (listener) => {
       listener(value);
     }
   });
+};
+
+export const mapError = (transform) => (broadcaster) => (listener) => {
+  const cancel = broadcaster((error) => {
+    if (error instanceof Error) {
+      listener(transform(error));
+      return;
+    }
+    listener(error);
+  });
+  return () => {
+    cancel();
+  };
 };

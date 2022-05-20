@@ -39,6 +39,25 @@ export const createInterval = curry((time, listener) => {
   };
 });
 
+export const getUrl = curry((url, listener) => {
+  let control = new AbortController();
+  let signal = control.signal;
+  fetch(url, { signal })
+    .then((response) => {
+      return response.json();
+    })
+    .then((json) => {
+      listener(json);
+    })
+    .catch((err) => {
+      listener(err);
+    });
+
+  return () => {
+    control.abort();
+  };
+});
+
 export const merge = curry((boradcaster1, boradcaster2, listener) => {
   const cancel1 = boradcaster1(listener);
   const cancel2 = boradcaster2(listener);

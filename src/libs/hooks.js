@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { DONE } from "./broadcasters";
-export const useBroadcaster = (broadcaster, deps = []) => {
-  const [state, setState] = useState(null);
+export const useBroadcaster = (broadcaster, init, deps = []) => {
+  const [state, setState] = useState(init);
   useEffect(() => {
     broadcaster((value) => {
       if (value === DONE) {

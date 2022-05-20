@@ -3,43 +3,49 @@ import { createRoot } from "react-dom/client";
 
 import {
   delayWhen,
+  debounce,
   filter,
   filterByKey,
   flatMap,
   map,
+  mapError,
   mapInputValue,
   mapSequence,
   mapTo,
   scan,
 } from "./libs/operators";
 import { useBroadcaster, useListener } from "./libs/hooks";
-import { createTimeout, DONE, forOf } from "./libs/broadcasters";
+import { createTimeout, getUrl, forOf } from "./libs/broadcasters";
 import { pipe } from "lodash/fp";
 
-const delayMessage = (msg) => mapTo(msg)(createTimeout(500));
-const sequenceMessages = (message = "") =>
-  mapSequence(delayMessage)(forOf(message.split(" ")));
+const BASE_URL = "https://openlibrary.org";
+const openLibraryApi = (id) => `${BASE_URL}/search.json?q=${id}`;
 
 const container = document.getElementById("app");
 const root = createRoot(container);
 const App = () => {
   const onInput = useListener();
-  const onKeyDown = useListener();
-  const enter = filterByKey("Enter")(onKeyDown);
-  const inputToSequenceMessage = pipe(
+  const searchForBooks = pipe(
+    debounce(500),
     mapInputValue,
-    delayWhen(enter),
-    flatMap(sequenceMessages),
-    scan((acc, curr) => {
-      acc += ` ${curr}`;
-      return acc;
-    }, "")
+    filter((str) => str.length > 3),
+    map(openLibraryApi),
+    flatMap(getUrl),
+    map((obj) => obj.docs)
   );
-  const state = useBroadcaster(inputToSequenceMessage(onInput));
+  let books = useBroadcaster(searchForBooks(onInput), []);
   return (
     <div>
-      <input type="text" onInput={onInput} onKeyDown={onKeyDown} />
-      {state}
+      <input type="text" onInput={onInput} />
+      <br />
+      {books.map((book, i) => (
+        <div key={`${book.key}-${i}`}>
+          <a href={BASE_URL + book.key} target="_blank" rel="noopener">
+            {" "}
+            {book.title}
+          </a>
+        </div>
+      ))}
     </div>
   );
 };
