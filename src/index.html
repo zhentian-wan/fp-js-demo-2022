@@ -4,8 +4,18 @@
     <meta charset="utf-8" />
     <script type="module" src="index.js"></script>
     <title>My First Parcel App</title>
+    <script>
+      __REACT_DEVTOOLS_GLOABL_HOOK__ = {
+        supportsFiber: ture,
+        inject: function () {},
+        onCommitFiberRoot: function () {},
+        onCommitFiberUnmount: function () {},
+      };
+    </script>
   </head>
   <body>
-    <input id="input" />
+    <div id="app">
+      <input id="input" />
+    </div>
   </body>
 </html>
