@@ -1,7 +1,7 @@
 import {
   DONE,
   map,
-  flatMapTo,
+  switchMapTo,
   concatString,
   mapInputValue,
   cancelWhen,
@@ -31,7 +31,7 @@ const winLogic = pipe(
 const hangman = curry((inputSelector, word) => {
   const game = pipe(
     map(hangmanLogic),
-    flatMapTo(forOf(word)),
+    switchMapTo(forOf(word)),
     concatString
   )(inputValue(inputSelector));
 

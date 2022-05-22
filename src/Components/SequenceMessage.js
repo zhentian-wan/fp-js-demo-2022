@@ -2,7 +2,7 @@ import React from "react";
 import {
   delayWhen,
   filterByKey,
-  flatMap,
+  switchMap,
   mapInputValue,
   mapSequence,
   mapTo,
@@ -22,7 +22,7 @@ export const SequenceMessages = () => {
   const logic = pipe(
     mapInputValue,
     delayWhen(enter),
-    flatMap(sequenceMessages),
+    switchMap(sequenceMessages),
     scan((acc, curr) => {
       acc += ` ${curr}`;
       return acc;

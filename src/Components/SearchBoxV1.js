@@ -2,7 +2,7 @@ import React from "react";
 import {
   debounce,
   filter,
-  flatMap,
+  switchMap,
   map,
   mapInputValue,
 } from "../libs/operators";
@@ -17,10 +17,11 @@ export const SearchBoxV1 = () => {
   const onInput = useListener();
   const inputValue = mapInputValue(onInput);
   const searchForBooks = pipe(
-    debounce(500),
+    //debounce(500),
     filter((str) => str.length > 3),
     map(openLibraryApi),
-    flatMap(getUrl),
+    switchMap(getUrl),
+    filter((obj) => obj?.docs),
     map((obj) => obj.docs)
   );
   const clearSearch = pipe(

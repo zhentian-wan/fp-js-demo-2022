@@ -133,16 +133,31 @@ export const flip = curry((arg2, fn, broadcaster, listener) => {
   };
 });
 
-export const flatMap = (createBroadcaster) =>
+export const switchMap = (createBroadcaster, cacheable = false) =>
   createOperator((broadcaster, listener) => {
+    const cache = new Map();
+    let cancel;
     return broadcaster((value) => {
+      if (cancel) {
+        // cancel new broadcaster
+        cancel();
+      }
+      if (cache.get(value)) {
+        listener(cache.get(value));
+        return;
+      }
       const newBroadcaster = createBroadcaster(value);
-      return newBroadcaster(listener);
+      cancel = newBroadcaster((newValue) => {
+        if (cacheable && !(newValue instanceof Error)) {
+          cache.set(value, newValue);
+        }
+        listener(newValue);
+      });
     });
   });
 
-export const flatMapTo = (broadcaster) =>
-  flatMap((operator) => operator(broadcaster));
+export const switchMapTo = (broadcaster) =>
+  switchMap((operator) => operator(broadcaster));
 
 export const map = (transform) =>
   createOperator((broadcaster, listener) => {

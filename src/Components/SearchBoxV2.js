@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   debounce,
   filter,
-  flatMap,
+  switchMap,
   map,
   mapInputValue,
 } from "../libs/operators";
@@ -20,7 +20,7 @@ export const SearchBoxV2 = () => {
   //   debounce(500),
   //   filter((str) => str.length > 3),
   //   map(openLibraryApi),
-  //   flatMap(getUrl),
+  //   switchMap(getUrl),
   //   map((obj) => obj.docs)
   // );
   // const clearSearch = pipe(
