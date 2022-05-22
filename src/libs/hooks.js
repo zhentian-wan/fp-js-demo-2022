@@ -1,3 +1,4 @@
+import { F } from "lodash/fp";
 import { useState, useEffect, useCallback } from "react";
 import { DONE } from "./broadcasters";
 export const useBroadcaster = (broadcaster, init, deps = []) => {
@@ -14,13 +15,15 @@ export const useBroadcaster = (broadcaster, init, deps = []) => {
 };
 
 export const useListener = (deps = []) => {
-  let listener;
+  let listeners = [];
   const callbackListener = (value) => {
     if (typeof value === "function") {
-      listener = value;
+      listeners.push(value);
       return;
     }
-    listener(value);
+    listeners.forEach((listener) => {
+      listener(value);
+    });
   };
   return useCallback(callbackListener, deps);
 };

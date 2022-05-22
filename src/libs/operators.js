@@ -118,6 +118,21 @@ export const doneAfter = (condition) => (broadcaster) => (listener) => {
   };
 };
 
+// untested
+export const flip = curry((arg2, fn, broadcaster, listener) => {
+  const cancel = broadcaster((value) => {
+    if (value === DONE) {
+      listener(DONE);
+      return;
+    }
+    listener(fn(value, arg2));
+  });
+
+  return () => {
+    cancel();
+  };
+});
+
 export const flatMap = (createBroadcaster) =>
   createOperator((broadcaster, listener) => {
     return broadcaster((value) => {
@@ -372,3 +387,20 @@ export const mapError = (transform) => (broadcaster) => (listener) => {
     cancel();
   };
 };
+
+export const ifElse =
+  (condition, ifOperator, elseOperator) => (broadcaster) => (listener) => {
+    const cancel = broadcaster((value) => {
+      // broadcaster is a function that take a listener as parameter and invoke that listener
+      const immediateBroadcaster = (l) => l(value);
+      if (condition(value)) {
+        ifOperator(immediateBroadcaster)(listener);
+      } else {
+        elseOperator(immediateBroadcaster)(listener);
+      }
+    });
+
+    return () => {
+      cancel();
+    };
+  };
