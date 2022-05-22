@@ -19,7 +19,9 @@ export const useListener = (deps = []) => {
   const callbackListener = (value) => {
     if (typeof value === "function") {
       listeners.push(value);
-      return;
+      return () => {
+        listeners = [];
+      };
     }
     listeners.forEach((listener) => {
       listener(value);

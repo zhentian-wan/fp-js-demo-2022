@@ -119,19 +119,26 @@ export const doneAfter = (condition) => (broadcaster) => (listener) => {
 };
 
 // untested
-export const flip = curry((arg2, fn, broadcaster, listener) => {
-  const cancel = broadcaster((value) => {
-    if (value === DONE) {
-      listener(DONE);
-      return;
-    }
-    listener(fn(value, arg2));
-  });
+export const flip = (fn) => {
+  let cancel;
+  return curry(function (a, b) {
+    const args = [...arguments];
+    args[0] = b;
+    console.log("args[0]", b);
+    args[1] = a;
+    console.log("args[1]", a);
+    const newBroadcaster = fn.apply(this, args);
+    return (listener) => {
+      cancel = newBroadcaster((value) => {
+        listener(value);
+      });
 
-  return () => {
-    cancel();
-  };
-});
+      return () => {
+        cancel();
+      };
+    };
+  });
+};
 
 export const switchMap = (createBroadcaster, cacheable = false) =>
   createOperator((broadcaster, listener) => {
@@ -419,3 +426,24 @@ export const ifElse =
       cancel();
     };
   };
+
+// invoke share() immedicately
+export const share = () => {
+  let listeners = [];
+  let cancel;
+  return (broadcaster) => {
+    if (!cancel) {
+      cancel = broadcaster((value) => {
+        listeners.forEach((listener) => listener(value));
+      });
+    }
+
+    return (listener) => {
+      listeners.push(listener);
+
+      return () => {
+        cancel();
+      };
+    };
+  };
+};

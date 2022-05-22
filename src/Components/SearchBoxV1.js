@@ -17,7 +17,7 @@ export const SearchBoxV1 = () => {
   const onInput = useListener();
   const inputValue = mapInputValue(onInput);
   const searchForBooks = pipe(
-    //debounce(500),
+    debounce(500),
     filter((str) => str.length > 3),
     map(openLibraryApi),
     switchMap(getUrl),
