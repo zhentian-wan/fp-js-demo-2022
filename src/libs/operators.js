@@ -45,12 +45,27 @@ export const concatString = curry((broadcaster, listener) => {
   });
 });
 
-export const doneCondition = (condition) => (broadcaster) => (listener) => {
+export const combine = curry((broadcaster1, broadcaster2, listener) => {
+  let value1, value2;
+  const cancel1 = broadcaster1((value) => {
+    value1 = value;
+    listener([value1, value2]);
+  });
+  const cancel2 = broadcaster2((value) => {
+    value2 = value;
+    listener([value1, value2]);
+  });
+  return () => {
+    cancel1();
+    cancel2();
+  };
+});
+
+export const doneIf = (condition) => (broadcaster) => (listener) => {
   let cancel = broadcaster((value) => {
+    listener(value);
     if (condition(value)) {
-      listener(value);
       listener(DONE);
-      cancel();
     }
   });
   return () => {
@@ -70,7 +85,9 @@ export const delayWhen = (allowBroadcaster) => (broadcaster) => (listener) => {
   });
   return () => {
     cancel && cancel();
+    cancel = null;
     cancelAllow && cancelAllow();
+    cancelAllow = null;
   };
 };
 
@@ -100,7 +117,9 @@ export const debounce = (time) => (broadcaster) => (listener) => {
   });
   return () => {
     cancel();
+    cancel = null;
     cancelTimeout && cancelTimeout();
+    cancelTimeout = null;
   };
 };
 
@@ -197,6 +216,7 @@ export const repeat = (broadcaster) => (listener) => {
   cancel = broadcaster(repeatListener);
   return () => {
     cancel();
+    cancel = null;
   };
 };
 
@@ -229,7 +249,9 @@ export const repeatWhen =
     cancel = mainBroadcaster(repeatListener);
     return () => {
       cancel();
+      cancel = null;
       cancelWhen && cancelWhen();
+      cancelWhen = null;
     };
   };
 
@@ -254,6 +276,7 @@ export const scan = (reducer, init) => (broadcaster) => (listener) => {
   });
   return () => {
     cancel();
+    cancel = null;
   };
 };
 
@@ -261,7 +284,7 @@ export const scan = (reducer, init) => (broadcaster) => (listener) => {
 export const split = (splitter) =>
   curry((broadcaster, listener) => {
     let buffer = [];
-    return broadcaster((value) => {
+    const cancel = broadcaster((value) => {
       if (value === DONE) {
         listener(buffer);
         buffer = [];
@@ -274,6 +297,10 @@ export const split = (splitter) =>
         buffer.push(value);
       }
     });
+
+    return () => {
+      cancel();
+    };
   });
 
 export const startWhen = curry(
@@ -303,7 +330,9 @@ export const startWhen = curry(
 
     return () => {
       cancelOutter();
+      cancelOutter = null;
       cancelInnter();
+      cancelInnter = null;
     };
   }
 );
@@ -325,6 +354,7 @@ export const sequences =
 
     return () => {
       cancel();
+      cancel = null;
     };
   };
 
@@ -370,9 +400,22 @@ export const mapSequence =
 
     return () => {
       cancel();
+      cancel = null;
       cacnelInner && cacnelInner();
+      cacnelInner = null;
     };
   };
+
+export const tap = (fn) => (broadcaster) => (listener) => {
+  const cancel = broadcaster((value) => {
+    fn(value);
+    listener(value);
+  });
+
+  return () => {
+    cancel();
+  };
+};
 
 export const takeUntil = curry(
   (outterBroadcaster, innterBroadcaster, listener) => {
@@ -388,13 +431,17 @@ export const takeUntil = curry(
 );
 
 export const mapDone = (doneValue) => (broadcaster) => (listener) => {
-  return broadcaster((value) => {
+  const cancel = broadcaster((value) => {
     if (value === DONE) {
       listener(doneValue);
     } else {
       listener(value);
     }
   });
+
+  return () => {
+    cancel();
+  };
 };
 
 export const mapError = (transform) => (broadcaster) => (listener) => {
@@ -431,19 +478,28 @@ export const ifElse =
 export const share = () => {
   let listeners = [];
   let cancel;
-  return (broadcaster) => {
+  return (broadcaster) => (listener) => {
     if (!cancel) {
       cancel = broadcaster((value) => {
         listeners.forEach((listener) => listener(value));
       });
     }
+    listeners.push(listener);
 
-    return (listener) => {
-      listeners.push(listener);
-
-      return () => {
-        cancel();
-      };
+    return () => {
+      cancel();
+      cancel = null;
     };
   };
 };
+
+export const startWith =
+  (value = null) =>
+  (broadcaster) =>
+  (listener) => {
+    listener(value);
+    const cancel = broadcaster(listener);
+    return () => {
+      cancel();
+    };
+  };

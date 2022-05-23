@@ -5,7 +5,7 @@ import {
   concatString,
   mapInputValue,
   cancelWhen,
-  doneCondition,
+  doneIf,
   mapDone,
 } from "../libs/operators";
 import { addListener, forOf } from "../libs/broadcasters";
@@ -24,7 +24,7 @@ const hangmanLogic = (values) => {
 };
 
 const winLogic = pipe(
-  doneCondition((str) => !str.includes("_")),
+  doneIf((str) => !str.includes("_")),
   mapDone("You win!")
 );
 
