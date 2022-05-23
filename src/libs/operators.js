@@ -1,6 +1,5 @@
-import { curry } from "lodash";
 import { createTimeout, DONE } from "./broadcasters";
-import { pipe } from "lodash/fp";
+import { curry, pipe } from "lodash/fp";
 
 const createOperator = curry((operator, broadcaster, listener) => {
   return operator((behaviorListener) => {

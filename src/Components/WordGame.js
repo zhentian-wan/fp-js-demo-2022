@@ -13,15 +13,16 @@ const wordLogic = pipe(map(head));
 const wordBraodcaster = wordLogic(
   getUrl(`https://random-word-api.herokuapp.com/word`)
 );
+const guessLogic = pipe(mapInputValue, startWith(""));
+const gameLogic = pipe(
+  filter(every(isString)),
+  repeatIf(([word, guess]) =>
+    Array.from(word).every((letter) => guess.includes(letter))
+  )
+);
+
 export const WordGame = () => {
   const onChange = useListener();
-  const gameLogic = pipe(
-    filter(every(isString)),
-    repeatIf(([word, guess]) =>
-      Array.from(word).every((letter) => guess.includes(letter))
-    )
-  );
-  const guessLogic = pipe(mapInputValue, startWith(""));
   const guesBroadcaster = guessLogic(onChange);
   const gameBroadcaster = gameLogic(
     thenCombine(guesBroadcaster)(wordBraodcaster)

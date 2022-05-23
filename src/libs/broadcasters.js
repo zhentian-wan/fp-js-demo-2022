@@ -1,5 +1,4 @@
 import { curry } from "lodash/fp";
-
 export const DONE = Symbol("done");
 
 export const addListener = curry((element, eventName, listener) => {

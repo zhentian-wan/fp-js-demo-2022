@@ -1,4 +1,3 @@
-import { F } from "lodash/fp";
 import { useState, useEffect, useCallback } from "react";
 import { DONE } from "./broadcasters";
 export const useBroadcaster = (broadcaster, init, deps = []) => {
