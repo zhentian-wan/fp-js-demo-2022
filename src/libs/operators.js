@@ -1,5 +1,6 @@
 import { curry } from "lodash";
 import { createTimeout, DONE } from "./broadcasters";
+import { pipe } from "lodash/fp";
 
 const createOperator = curry((operator, broadcaster, listener) => {
   return operator((behaviorListener) => {
@@ -255,6 +256,8 @@ export const repeatWhen =
     };
   };
 
+export const repeatIf = (condition) => pipe(doneIf(condition), repeat);
+
 export const scan = (reducer, init) => (broadcaster) => (listener) => {
   let acc = init;
   let buffer = [];
@@ -430,6 +433,26 @@ export const takeUntil = curry(
   }
 );
 
+export const thenCombine = (secondBroadcaster) => {
+  return mapBroadcaster((firstValue) =>
+    map((secondValue) => [firstValue, secondValue])(secondBroadcaster)
+  );
+};
+
+export let mapBroadcaster =
+  (createBroadcaster) => (broadcaster) => (listener) => {
+    let cancelNew;
+    const cancel = broadcaster((value) => {
+      let newBroadcaster = createBroadcaster(value);
+      cancelNew = newBroadcaster(listener);
+    });
+
+    return () => {
+      cancel();
+      cancelNew && cancelNew();
+    };
+  };
+
 export const mapDone = (doneValue) => (broadcaster) => (listener) => {
   const cancel = broadcaster((value) => {
     if (value === DONE) {
@@ -489,6 +512,7 @@ export const share = () => {
     return () => {
       cancel();
       cancel = null;
+      listeners = [];
     };
   };
 };

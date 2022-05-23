@@ -4,12 +4,15 @@ import { DONE } from "./broadcasters";
 export const useBroadcaster = (broadcaster, init, deps = []) => {
   const [state, setState] = useState(init);
   useEffect(() => {
-    broadcaster((value) => {
+    const cancel = broadcaster((value) => {
       if (value === DONE) {
         return;
       }
       setState(value);
     });
+    return () => {
+      cancel();
+    };
   }, deps);
   return state;
 };
