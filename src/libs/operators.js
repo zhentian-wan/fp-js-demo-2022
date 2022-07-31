@@ -141,12 +141,7 @@ export const doneAfter = (condition) => (broadcaster) => (listener) => {
 export const flip = (fn) => {
   let cancel;
   return curry(function (a, b) {
-    const args = [...arguments];
-    args[0] = b;
-    console.log("args[0]", b);
-    args[1] = a;
-    console.log("args[1]", a);
-    const newBroadcaster = fn.apply(this, args);
+    const newBroadcaster = fn.bind(this, [b, a]);
     return (listener) => {
       cancel = newBroadcaster((value) => {
         listener(value);
